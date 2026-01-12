@@ -7,7 +7,16 @@ module.exports = async (req, res) => {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const { numero, metodo, nome, email, telefone } = req.body;
+  if (req.method !== 'POST') {
+    return res.status(405).json({ success: false, message: 'Método não permitido' });
+  }
+
+  const { numero, metodo, nome, email, telefone, tracking } = req.body;
+
+  // Validação básica
+  if (!numero || !metodo || !nome || !email || !telefone) {
+    return res.status(400).json({ success: false, message: 'Dados incompletos' });
+  }
   
   // Configurações do Pedido
   const orderId = `ORD-${Date.now()}`;
@@ -46,11 +55,11 @@ module.exports = async (req, res) => {
         priceInCents: valorCentavos
       }],
       trackingParameters: {
-        utm_source: req.body.utm_source || null,
-        utm_campaign: req.body.utm_campaign || null,
-        utm_medium: req.body.utm_medium || null,
-        utm_content: req.body.utm_content || null,
-        utm_term: req.body.utm_term || null
+        utm_source: tracking?.utm_source || req.body.utm_source || null,
+        utm_campaign: tracking?.utm_campaign || req.body.utm_campaign || null,
+        utm_medium: tracking?.utm_medium || req.body.utm_medium || null,
+        utm_content: tracking?.utm_content || req.body.utm_content || null,
+        utm_term: tracking?.utm_term || req.body.utm_term || null
       },
       commission: {
         totalPriceInCents: valorCentavos,
@@ -99,10 +108,15 @@ module.exports = async (req, res) => {
       headers: { 'x-api-token': process.env.UTMIFY_TOKEN }
     }).catch(e => console.error("Erro Utmify Pago:", e.message));
 
-    return res.status(200).json({ success: true, data: e2pResponse.data });
+    return res.status(200).json({ success: true, data: e2pResponse.data, message: 'Pagamento processado com sucesso' });
 
   } catch (error) {
     console.error("Erro Geral:", error.response?.data || error.message);
-    return res.status(500).json({ success: false });
+    console.error("Stack:", error.stack);
+    return res.status(500).json({ 
+      success: false, 
+      message: error.message || 'Erro ao processar pagamento',
+      error: error.response?.data || null
+    });
   }
 };
