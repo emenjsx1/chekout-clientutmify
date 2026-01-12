@@ -12,6 +12,19 @@ module.exports = async (req, res) => {
     return res.status(405).json({ success: false, message: 'Método não permitido' });
   }
 
+  // Validar variáveis de ambiente
+  const requiredEnvVars = ['E2P_CLIENT_ID', 'E2P_CLIENT_SECRET', 'E2P_MPESA_WALLET', 'E2P_EMOLA_WALLET', 'UTMIFY_TOKEN'];
+  const missingEnvVars = requiredEnvVars.filter(v => !process.env[v]);
+  
+  if (missingEnvVars.length > 0) {
+    console.error('Variáveis de ambiente faltando:', missingEnvVars);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Configuração do servidor incompleta',
+      missing: missingEnvVars
+    });
+  }
+
   const { numero, metodo, nome, email, telefone, tracking } = req.body;
 
   // Validação básica
@@ -76,25 +89,45 @@ module.exports = async (req, res) => {
     // ------------------------------------------------------------
     // 2. E2PAYMENTS - PROCESSAR COBRANÇA
     // ------------------------------------------------------------
-    const auth = await axios.post("https://e2payments.explicador.co.mz/oauth/token", {
-      grant_type: "client_credentials",
-      client_id: process.env.E2P_CLIENT_ID,
-      client_secret: process.env.E2P_CLIENT_SECRET
-    });
+    let auth;
+    try {
+      auth = await axios.post("https://e2payments.explicador.co.mz/oauth/token", {
+        grant_type: "client_credentials",
+        client_id: process.env.E2P_CLIENT_ID,
+        client_secret: process.env.E2P_CLIENT_SECRET
+      });
+    } catch (authError) {
+      console.error("Erro na autenticação E2P:", authError.response?.data || authError.message);
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Erro na autenticação com provedor de pagamento',
+        error: authError.response?.data?.error_description || authError.message
+      });
+    }
 
     const token = auth.data.access_token;
     const wallet_id = metodo === 'mpesa' ? process.env.E2P_MPESA_WALLET : process.env.E2P_EMOLA_WALLET;
 
-    const e2pResponse = await axios.post(
-      `https://e2payments.explicador.co.mz/v1/c2b/${metodo}-payment/${wallet_id}`,
-      {
-        client_id: process.env.E2P_CLIENT_ID,
-        amount: valorMZN.toString(),
-        phone: finalNumber,
-        reference: orderId
-      },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    let e2pResponse;
+    try {
+      e2pResponse = await axios.post(
+        `https://e2payments.explicador.co.mz/v1/c2b/${metodo}-payment/${wallet_id}`,
+        {
+          client_id: process.env.E2P_CLIENT_ID,
+          amount: valorMZN.toString(),
+          phone: finalNumber,
+          reference: orderId
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    } catch (paymentError) {
+      console.error("Erro na requisição de pagamento E2P:", paymentError.response?.data || paymentError.message);
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Erro ao processar pagamento',
+        error: paymentError.response?.data || paymentError.message
+      });
+    }
 
     // ------------------------------------------------------------
     // 3. UTMIFY - ATUALIZAR PARA PAGO (Paid)
