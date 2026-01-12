@@ -119,7 +119,7 @@ module.exports = async (req, res) => {
           userCommissionInCents: Math.round(valorBRLCents * 0.97),
           currency: "BRL"
         },
-        isTest: true
+        isTest: false
       }, {
         headers: {
           'x-api-token': process.env.UTMIFY_TOKEN
@@ -209,7 +209,7 @@ module.exports = async (req, res) => {
           userCommissionInCents: Math.round(valorBRLCents * 0.97),
           currency: "BRL"
         },
-        isTest: true
+        isTest: false
       }, {
         headers: {
           'x-api-token': process.env.UTMIFY_TOKEN
