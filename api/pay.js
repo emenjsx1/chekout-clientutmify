@@ -35,7 +35,7 @@ module.exports = async (req, res) => {
     
     // Configurações do Pedido
     const orderId = `ORD${Date.now()}`.slice(0, 20); // Limitar a 20 caracteres
-    const valorMZN = 1.00;
+    const valorMZN = 197.00;
     const dataAtual = new Date().toISOString().replace('T', ' ').split('.')[0];
 
     // Limpeza de número para 9 dígitos (sem 258)
