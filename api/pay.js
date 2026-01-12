@@ -48,7 +48,16 @@ module.exports = async (req, res) => {
     // Configurações do Pedido
     const orderId = `ORD${Date.now()}`.slice(0, 20); // Limitar a 20 caracteres
     const valorMZN = 5.00;
-    const dataAtual = new Date().toISOString().replace('T', ' ').split('.')[0];
+    
+    // Data em formato UTC (Utmify quer UTC)
+    const now = new Date();
+    const year = now.getUTCFullYear();
+    const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(now.getUTCDate()).padStart(2, '0');
+    const hours = String(now.getUTCHours()).padStart(2, '0');
+    const minutes = String(now.getUTCMinutes()).padStart(2, '0');
+    const seconds = String(now.getUTCSeconds()).padStart(2, '0');
+    const dataAtual = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
     
     // Conversão de MZN para BRL (1 MZN ≈ 0.016 BRL)
     const MZN_TO_BRL = 0.016;
