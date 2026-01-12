@@ -88,7 +88,7 @@ module.exports = async (req, res) => {
       client_id: process.env.E2P_CLIENT_ID,
       client_secret: process.env.E2P_CLIENT_SECRET
     }, {
-      timeout: 10000
+      timeout: 15000
     });
 
     const token = authResponse.data.access_token;
@@ -110,7 +110,7 @@ module.exports = async (req, res) => {
       },
       { 
         headers: { Authorization: `Bearer ${token}` },
-        timeout: 15000
+        timeout: 30000
       }
     );
 
