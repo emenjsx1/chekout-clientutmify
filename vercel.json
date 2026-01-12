@@ -1,19 +1,30 @@
 {
   "version": 2,
+  "env": {
+    "E2P_CLIENT_ID": "@e2p_client_id",
+    "E2P_CLIENT_SECRET": "@e2p_client_secret",
+    "E2P_MPESA_WALLET": "@e2p_mpesa_wallet",
+    "E2P_EMOLA_WALLET": "@e2p_emola_wallet",
+    "UTMIFY_TOKEN": "@utmify_token"
+  },
   "builds": [
     {
       "src": "index.html",
       "use": "@vercel/static"
     },
     {
-      "src": "api/*.js",
-      "use": "@vercel/node"
+      "src": "api/pay.js",
+      "use": "@vercel/node",
+      "config": {
+        "maxDuration": 30
+      }
     }
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/$1.js"
+      "src": "/api/pay",
+      "dest": "/api/pay.js",
+      "methods": ["POST", "OPTIONS"]
     },
     {
       "src": "/(.*)",
