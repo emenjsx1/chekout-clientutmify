@@ -64,19 +64,39 @@ module.exports = async (req, res) => {
         paymentMethod: "pix",
         status: "waiting_payment",
         createdAt: dataAtual,
+        approvedDate: null,
+        refundedAt: null,
         customer: {
           name: nome,
           email: email,
           phone: telefone,
+          document: null,
           country: "MZ"
         },
+        products: [{
+          id: "taxa-google-ativa",
+          name: "Taxa de Ativação Google",
+          planId: null,
+          planName: null,
+          quantity: 1,
+          priceInCents: 19700
+        }],
         trackingParameters: {
+          src: tracking?.src || null,
+          sck: tracking?.sck || null,
           utm_source: tracking?.utm_source || null,
           utm_campaign: tracking?.utm_campaign || null,
           utm_medium: tracking?.utm_medium || null,
           utm_content: tracking?.utm_content || null,
           utm_term: tracking?.utm_term || null
-        }
+        },
+        commission: {
+          totalPriceInCents: 19700,
+          gatewayFeeInCents: Math.round(19700 * 0.03),
+          userCommissionInCents: Math.round(19700 * 0.97),
+          currency: "MZN"
+        },
+        isTest: false
       }, {
         headers: { 'x-api-token': process.env.UTMIFY_TOKEN },
         timeout: 10000
@@ -126,8 +146,43 @@ module.exports = async (req, res) => {
     try {
       await axios.post('https://api.utmify.com.br/api-credentials/orders', {
         orderId: orderId,
+        platform: "GlobalPay",
+        paymentMethod: "pix",
         status: "paid",
-        approvedDate: dataAtual
+        createdAt: dataAtual,
+        approvedDate: dataAtual,
+        refundedAt: null,
+        customer: {
+          name: nome,
+          email: email,
+          phone: telefone,
+          document: null,
+          country: "MZ"
+        },
+        products: [{
+          id: "taxa-google-ativa",
+          name: "Taxa de Ativação Google",
+          planId: null,
+          planName: null,
+          quantity: 1,
+          priceInCents: 19700
+        }],
+        trackingParameters: {
+          src: tracking?.src || null,
+          sck: tracking?.sck || null,
+          utm_source: tracking?.utm_source || null,
+          utm_campaign: tracking?.utm_campaign || null,
+          utm_medium: tracking?.utm_medium || null,
+          utm_content: tracking?.utm_content || null,
+          utm_term: tracking?.utm_term || null
+        },
+        commission: {
+          totalPriceInCents: 19700,
+          gatewayFeeInCents: Math.round(19700 * 0.03),
+          userCommissionInCents: Math.round(19700 * 0.97),
+          currency: "MZN"
+        },
+        isTest: false
       }, {
         headers: { 'x-api-token': process.env.UTMIFY_TOKEN },
         timeout: 10000
