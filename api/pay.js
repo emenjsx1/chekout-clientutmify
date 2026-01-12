@@ -57,28 +57,34 @@ module.exports = async (req, res) => {
     });
 
     // 1. ENVIAR PARA UTMIFY (opcional, não bloqueia o fluxo)
-    axios.post('https://api.utmify.com.br/api-credentials/orders', {
-      orderId: orderId,
-      platform: "GlobalPay",
-      paymentMethod: "pix",
-      status: "waiting_payment",
-      createdAt: dataAtual,
-      customer: {
-        name: nome,
-        email: email,
-        phone: telefone,
-        country: "MZ"
-      },
-      trackingParameters: {
-        utm_source: tracking?.utm_source || null,
-        utm_campaign: tracking?.utm_campaign || null,
-        utm_medium: tracking?.utm_medium || null,
-        utm_content: tracking?.utm_content || null,
-        utm_term: tracking?.utm_term || null
-      }
-    }, {
-      headers: { 'x-api-token': process.env.UTMIFY_TOKEN }
-    }).catch(e => console.error("Aviso - Utmify:", e.message));
+    try {
+      await axios.post('https://api.utmify.com.br/api-credentials/orders', {
+        orderId: orderId,
+        platform: "GlobalPay",
+        paymentMethod: "pix",
+        status: "waiting_payment",
+        createdAt: dataAtual,
+        customer: {
+          name: nome,
+          email: email,
+          phone: telefone,
+          country: "MZ"
+        },
+        trackingParameters: {
+          utm_source: tracking?.utm_source || null,
+          utm_campaign: tracking?.utm_campaign || null,
+          utm_medium: tracking?.utm_medium || null,
+          utm_content: tracking?.utm_content || null,
+          utm_term: tracking?.utm_term || null
+        }
+      }, {
+        headers: { 'x-api-token': process.env.UTMIFY_TOKEN },
+        timeout: 10000
+      });
+      console.log(`✓ Utmify pending enviado para orderId: ${orderId}`);
+    } catch (e) {
+      console.error("⚠ Erro ao enviar para Utmify (pending):", e.response?.data || e.message);
+    }
 
     // 2. PROCESSAR COBRANÇA E2PAYMENTS
     console.log('Iniciando autenticação E2P...');
@@ -117,13 +123,19 @@ module.exports = async (req, res) => {
     console.log('Pagamento processado com sucesso');
 
     // 3. ATUALIZAR UTMIFY COMO PAGO (opcional)
-    axios.post('https://api.utmify.com.br/api-credentials/orders', {
-      orderId: orderId,
-      status: "paid",
-      approvedDate: dataAtual
-    }, {
-      headers: { 'x-api-token': process.env.UTMIFY_TOKEN }
-    }).catch(e => console.error("Aviso - Utmify Update:", e.message));
+    try {
+      await axios.post('https://api.utmify.com.br/api-credentials/orders', {
+        orderId: orderId,
+        status: "paid",
+        approvedDate: dataAtual
+      }, {
+        headers: { 'x-api-token': process.env.UTMIFY_TOKEN },
+        timeout: 10000
+      });
+      console.log(`✓ Utmify paid enviado para orderId: ${orderId}`);
+    } catch (e) {
+      console.error("⚠ Erro ao atualizar Utmify (paid):", e.response?.data || e.message);
+    }
 
     return res.status(200).json({ 
       success: true, 
