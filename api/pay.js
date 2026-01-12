@@ -2,6 +2,18 @@ require('dotenv').config();
 const axios = require('axios');
 
 module.exports = async (req, res) => {
+  // Adicionar métodos Express-like ao res
+  if (!res.status) {
+    res.status = function(code) {
+      this.statusCode = code;
+      return this;
+    };
+    res.json = function(data) {
+      this.setHeader('Content-Type', 'application/json');
+      this.end(JSON.stringify(data));
+    };
+  }
+
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -35,8 +47,13 @@ module.exports = async (req, res) => {
     
     // Configurações do Pedido
     const orderId = `ORD${Date.now()}`.slice(0, 20); // Limitar a 20 caracteres
-    const valorMZN = 197.00;
+    const valorMZN = 5.00;
     const dataAtual = new Date().toISOString().replace('T', ' ').split('.')[0];
+    
+    // Conversão de MZN para BRL (1 MZN ≈ 0.016 BRL)
+    const MZN_TO_BRL = 0.016;
+    const valorBRL = valorMZN * MZN_TO_BRL;
+    const valorBRLCents = Math.round(valorBRL * 100);
 
     // Limpeza de número para 9 dígitos (sem 258)
     let cleanNumber = numero.replace(/\D/g, '');
@@ -53,15 +70,21 @@ module.exports = async (req, res) => {
       orderId,
       metodo,
       phone: finalNumber,
-      amount: valorMZN
+      amountMZN: valorMZN,
+      amountBRL: valorBRL.toFixed(2),
+      amountBRLCents: valorBRLCents
     });
 
     // 1. ENVIAR PARA UTMIFY (opcional, não bloqueia o fluxo)
+    // Mapear método de pagamento para formato Utmify
+    const utmifyPaymentMethod = metodo === 'mpesa' ? 'boleto' : 'pix'; // M-Pesa mapeado como boleto (tipo de transferência)
+    
     try {
+      console.log(`[${new Date().toISOString()}] 📤 Tentando enviar para Utmify (pending)...`);
       await axios.post('https://api.utmify.com.br/api-credentials/orders', {
         orderId: orderId,
         platform: "GlobalPay",
-        paymentMethod: "pix",
+        paymentMethod: utmifyPaymentMethod,
         status: "waiting_payment",
         createdAt: dataAtual,
         approvedDate: null,
@@ -71,7 +94,7 @@ module.exports = async (req, res) => {
           email: email,
           phone: telefone,
           document: null,
-          country: "MZ"
+          country: "BR"
         },
         products: [{
           id: "taxa-google-ativa",
@@ -79,7 +102,7 @@ module.exports = async (req, res) => {
           planId: null,
           planName: null,
           quantity: 1,
-          priceInCents: 19700
+          priceInCents: valorBRLCents
         }],
         trackingParameters: {
           src: tracking?.src || null,
@@ -91,19 +114,22 @@ module.exports = async (req, res) => {
           utm_term: tracking?.utm_term || null
         },
         commission: {
-          totalPriceInCents: 19700,
-          gatewayFeeInCents: Math.round(19700 * 0.03),
-          userCommissionInCents: Math.round(19700 * 0.97),
-          currency: "MZN"
+          totalPriceInCents: valorBRLCents,
+          gatewayFeeInCents: Math.round(valorBRLCents * 0.03),
+          userCommissionInCents: Math.round(valorBRLCents * 0.97),
+          currency: "BRL"
         },
-        isTest: false
+        isTest: true
       }, {
-        headers: { 'x-api-token': process.env.UTMIFY_TOKEN },
+        headers: {
+          'x-api-token': process.env.UTMIFY_TOKEN
+        },
         timeout: 10000
       });
-      console.log(`✓ Utmify pending enviado para orderId: ${orderId}`);
+      console.log(`✅ Utmify pending enviado com sucesso para orderId: ${orderId}`);
     } catch (e) {
-      console.error("⚠ Erro ao enviar para Utmify (pending):", e.response?.data || e.message);
+      console.warn(`⚠️  Utmify (pending) indisponível - continuando fluxo: ${e.response?.data?.message || e.message}`);
+      // Não bloqueia o fluxo de pagamento
     }
 
     // 2. PROCESSAR COBRANÇA E2PAYMENTS
@@ -114,7 +140,7 @@ module.exports = async (req, res) => {
       client_id: process.env.E2P_CLIENT_ID,
       client_secret: process.env.E2P_CLIENT_SECRET
     }, {
-      timeout: 15000
+      timeout: 60000
     });
 
     const token = authResponse.data.access_token;
@@ -136,7 +162,7 @@ module.exports = async (req, res) => {
       },
       { 
         headers: { Authorization: `Bearer ${token}` },
-        timeout: 30000
+        timeout: 60000
       }
     );
 
@@ -144,10 +170,11 @@ module.exports = async (req, res) => {
 
     // 3. ATUALIZAR UTMIFY COMO PAGO (opcional)
     try {
+      console.log(`[${new Date().toISOString()}] 📤 Tentando enviar para Utmify (paid)...`);
       await axios.post('https://api.utmify.com.br/api-credentials/orders', {
         orderId: orderId,
         platform: "GlobalPay",
-        paymentMethod: "pix",
+        paymentMethod: utmifyPaymentMethod,
         status: "paid",
         createdAt: dataAtual,
         approvedDate: dataAtual,
@@ -157,7 +184,7 @@ module.exports = async (req, res) => {
           email: email,
           phone: telefone,
           document: null,
-          country: "MZ"
+          country: "BR"
         },
         products: [{
           id: "taxa-google-ativa",
@@ -165,7 +192,7 @@ module.exports = async (req, res) => {
           planId: null,
           planName: null,
           quantity: 1,
-          priceInCents: 19700
+          priceInCents: valorBRLCents
         }],
         trackingParameters: {
           src: tracking?.src || null,
@@ -177,19 +204,22 @@ module.exports = async (req, res) => {
           utm_term: tracking?.utm_term || null
         },
         commission: {
-          totalPriceInCents: 19700,
-          gatewayFeeInCents: Math.round(19700 * 0.03),
-          userCommissionInCents: Math.round(19700 * 0.97),
-          currency: "MZN"
+          totalPriceInCents: valorBRLCents,
+          gatewayFeeInCents: Math.round(valorBRLCents * 0.03),
+          userCommissionInCents: Math.round(valorBRLCents * 0.97),
+          currency: "BRL"
         },
-        isTest: false
+        isTest: true
       }, {
-        headers: { 'x-api-token': process.env.UTMIFY_TOKEN },
+        headers: {
+          'x-api-token': process.env.UTMIFY_TOKEN
+        },
         timeout: 10000
       });
-      console.log(`✓ Utmify paid enviado para orderId: ${orderId}`);
+      console.log(`✅ Utmify paid enviado com sucesso para orderId: ${orderId}`);
     } catch (e) {
-      console.error("⚠ Erro ao atualizar Utmify (paid):", e.response?.data || e.message);
+      console.warn(`⚠️  Utmify (paid) indisponível - continuando fluxo: ${e.response?.data?.message || e.message}`);
+      // Não bloqueia o fluxo de pagamento
     }
 
     return res.status(200).json({ 
