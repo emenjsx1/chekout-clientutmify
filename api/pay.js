@@ -47,7 +47,7 @@ module.exports = async (req, res) => {
     
     // Configurações do Pedido
     const orderId = `ORD${Date.now()}`.slice(0, 20); // Limitar a 20 caracteres
-    const valorMZN = 5.00;
+    const valorMZN = 197.00;
     const dataAtual = new Date().toISOString().replace('T', ' ').split('.')[0];
     
     // Conversão de MZN para BRL (1 MZN ≈ 0.016 BRL)
