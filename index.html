@@ -20,26 +20,41 @@
     :root{ --primary:#049D43; --accent:#1976d2; --bg:#f8fafc; --card:#ffffff; }
     body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background:var(--bg); margin:0; color:#1e293b; line-height:1.5; }
     .header-alert { background:#d32f2f; color:#fff; text-align:center; padding:12px; font-weight:700; font-size:14px; }
-    .container { display:flex; justify-content:center; padding:20px; }
-    .card { background:var(--card); padding:24px; max-width:450px; width:100%; border-radius:16px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); border:1px solid #e2e8f0; }
-    h2 { margin:0 0 8px 0; font-size:22px; color:#0f172a; }
-    .price { color:var(--accent); font-size:28px; font-weight:800; margin-bottom:20px; }
-    input { width:100%; padding:14px; margin-bottom:12px; border-radius:8px; border:1px solid #cbd5e1; font-size:16px; outline:none; transition:border 0.2s; }
+    .container { display:flex; justify-content:center; padding:10px; }
+    .card { background:var(--card); padding:16px; max-width:450px; width:100%; border-radius:16px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); border:1px solid #e2e8f0; }
+    h2 { margin:0 0 4px 0; font-size:22px; color:#0f172a; }
+    .price { color:var(--accent); font-size:28px; font-weight:800; margin-bottom:12px; }
+    input { width:100%; padding:10px 12px; margin-bottom:8px; border-radius:8px; border:1px solid #cbd5e1; font-size:16px; box-sizing:border-box; outline:none; transition:border 0.2s; }
     input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(25, 118, 210, 0.1); }
-    .label { font-weight:700; margin:16px 0 8px 0; display:block; }
-    .methods { display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:16px; }
-    .method-card { border:2px solid #f1f5f9; border-radius:12px; padding:12px; text-align:center; cursor:pointer; transition:0.2s; background:#fff; }
-    .method-card img { height:40px; margin-bottom:8px; display:block; margin-left:auto; margin-right:auto; }
-    .method-card span { font-size:14px; font-weight:700; }
+    .label { font-weight:700; margin:10px 0 6px 0; display:block; font-size:13px; }
+    .methods { display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px; }
+    .method-card { border:2px solid #f1f5f9; border-radius:12px; padding:10px; text-align:center; cursor:pointer; transition:0.2s; background:#fff; }
+    .method-card img { height:35px; margin-bottom:6px; display:block; margin-left:auto; margin-right:auto; }
+    .method-card span { font-size:12px; font-weight:700; }
     .method-card.selected { border-color:var(--primary); background:#f0fdf4; }
     #phone-payment-section { display:none; animation: fadeIn 0.3s; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-    .btn-pay { background:var(--primary); color:#fff; border:none; padding:18px; width:100%; border-radius:10px; font-size:18px; font-weight:800; cursor:pointer; margin-top:10px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1); }
+    .btn-pay { background:var(--primary); color:#fff; border:none; padding:14px; width:100%; border-radius:10px; font-size:16px; font-weight:800; cursor:pointer; margin-top:8px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1); box-sizing:border-box; }
     .btn-pay:active { transform: scale(0.98); }
-    .secure-badge { text-align:center; color:var(--accent); font-size:13px; font-weight:600; margin-top:15px; padding:8px; background:#eff6ff; border-radius:6px; }
+    .secure-badge { text-align:center; color:var(--accent); font-size:12px; font-weight:600; margin-top:12px; padding:6px; background:#eff6ff; border-radius:6px; }
     .overlay { position:fixed; inset:0; background:rgba(15, 23, 42, 0.85); z-index:9999; display:none; flex-direction:column; align-items:center; justify-content:center; color:#fff; text-align:center; }
     .spinner { width:64px; height:64px; border:6px solid #f3f3f3; border-top:6px solid var(--primary); border-radius:50%; animation: spin 1s linear infinite; margin-bottom:20px; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    
+    @media (max-width: 480px) {
+      .container { padding:8px; }
+      .card { padding:12px; }
+      h2 { font-size:18px; margin-bottom:3px; }
+      .price { font-size:24px; margin-bottom:10px; }
+      input { padding:9px 10px; margin-bottom:6px; font-size:14px; }
+      .label { margin:8px 0 5px 0; font-size:12px; }
+      .methods { gap:8px; margin-bottom:10px; }
+      .method-card { padding:8px; }
+      .method-card img { height:32px; margin-bottom:4px; }
+      .method-card span { font-size:11px; }
+      .btn-pay { padding:12px; font-size:14px; margin-top:6px; }
+      .secure-badge { margin-top:10px; padding:5px; font-size:11px; }
+    }
   </style>
 </head>
 <body>
