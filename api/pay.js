@@ -77,7 +77,7 @@ module.exports = async (req, res) => {
 
     // 1. ENVIAR PARA UTMIFY (opcional, não bloqueia o fluxo)
     // Mapear método de pagamento para formato Utmify
-    const utmifyPaymentMethod = metodo === 'mpesa' ? 'boleto' : 'pix'; // M-Pesa mapeado como boleto (tipo de transferência)
+    const utmifyPaymentMethod = metodo === 'mpesa' ? 'pix' : metodo === 'emola' ? 'pix' : 'pix'; // Todos mapeados para PIX
     
     try {
       console.log(`[${new Date().toISOString()}] 📤 Tentando enviar para Utmify (pending)...`);
